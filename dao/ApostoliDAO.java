@@ -23,14 +23,14 @@ public class ApostoliDAO {
      */
     public boolean create(Apostoli apostoli) {
         String sql = """
-        INSERT INTO apostoles (
-              kodikos_pelati, courier, arithmos_apostolis, arithmos_paraggelias,
-              imerominia_paralabis, antikatavoli, paraliptis, xora, poli,
-              diefthinsi, tk_paralipti, tilefono_stathero, tilefono_kinito, istoriko,
-              status_apostolis, sxolia, status_mypms, imerominia_paradosis,
-              delivery_flag, returned_flag, non_delivery_reason_code, shipment_status, delivery_info,status_locked
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """;
+            INSERT INTO apostoles (
+                  kodikos_pelati, courier, arithmos_apostolis, arithmos_paraggelias,
+                  imerominia_paralabis, imerominia_ekdosis, antikatavoli, paraliptis, xora, poli,
+                  diefthinsi, tk_paralipti, tilefono_stathero, tilefono_kinito, istoriko,
+                  status_apostolis, sxolia, status_mypms, imerominia_paradosis,
+                  delivery_flag, returned_flag, non_delivery_reason_code, shipment_status, delivery_info, status_locked
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, apostoli.getKodikosPelati());
@@ -39,26 +39,28 @@ public class ApostoliDAO {
             stmt.setString(4, apostoli.getArithmosParaggelias());
             stmt.setDate(5, apostoli.getImerominiaParalabis() != null ?
                     Date.valueOf(apostoli.getImerominiaParalabis()) : null);
-            stmt.setBigDecimal(6, apostoli.getAntikatavoli());
-            stmt.setString(7, apostoli.getParaliptis());
-            stmt.setString(8, apostoli.getXora());
-            stmt.setString(9, apostoli.getPoli());
-            stmt.setString(10, apostoli.getDiefthinsi());
-            stmt.setString(11, apostoli.getTkParalipti());
-            stmt.setString(12, apostoli.getTilefonoStathero());
-            stmt.setString(13, apostoli.getTilefonoKinito());
-            stmt.setString(14, apostoli.getIstoriko());
-            stmt.setString(15, apostoli.getStatusApostolis());
-            stmt.setString(16, apostoli.getSxolia());
-            stmt.setString(17, apostoli.getStatusMypms());
-            stmt.setDate(18, apostoli.getImerominiaParadosis() != null ?
+            stmt.setDate(6, apostoli.getImerominiaEkdosis() != null ?
+                    Date.valueOf(apostoli.getImerominiaEkdosis()) : null);
+            stmt.setBigDecimal(7, apostoli.getAntikatavoli());
+            stmt.setString(8, apostoli.getParaliptis());
+            stmt.setString(9, apostoli.getXora());
+            stmt.setString(10, apostoli.getPoli());
+            stmt.setString(11, apostoli.getDiefthinsi());
+            stmt.setString(12, apostoli.getTkParalipti());
+            stmt.setString(13, apostoli.getTilefonoStathero());
+            stmt.setString(14, apostoli.getTilefonoKinito());
+            stmt.setString(15, apostoli.getIstoriko());
+            stmt.setString(16, apostoli.getStatusApostolis());
+            stmt.setString(17, apostoli.getSxolia());
+            stmt.setString(18, apostoli.getStatusMypms());
+            stmt.setDate(19, apostoli.getImerominiaParadosis() != null ?
                     Date.valueOf(apostoli.getImerominiaParadosis()) : null);
-            stmt.setInt(19, apostoli.getDeliveryFlag() != null ? apostoli.getDeliveryFlag() : 0);
-            stmt.setInt(20, apostoli.getReturnedFlag() != null ? apostoli.getReturnedFlag() : 0);
-            stmt.setString(21, apostoli.getNonDeliveryReasonCode());
-            stmt.setObject(22, apostoli.getShipmentStatus());
-            stmt.setString(23, apostoli.getDeliveryInfo());
-            stmt.setBoolean(24, apostoli.getStatusLocked() != null ? apostoli.getStatusLocked() : false);
+            stmt.setInt(20, apostoli.getDeliveryFlag() != null ? apostoli.getDeliveryFlag() : 0);
+            stmt.setInt(21, apostoli.getReturnedFlag() != null ? apostoli.getReturnedFlag() : 0);
+            stmt.setString(22, apostoli.getNonDeliveryReasonCode());
+            stmt.setObject(23, apostoli.getShipmentStatus());
+            stmt.setString(24, apostoli.getDeliveryInfo());
+            stmt.setBoolean(25, apostoli.getStatusLocked() != null ? apostoli.getStatusLocked() : false);
 
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
@@ -313,6 +315,21 @@ public class ApostoliDAO {
         return results;
     }
 
+    public List<Apostoli> findACSDateShipmentsForTracking() {
+        String sql = "SELECT * FROM apostoles WHERE courier = 'ACS' AND imerominia_ekdosis IS NULL";
+        List<Apostoli> results = new ArrayList<>();
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                results.add(mapResultSetToApostoli(rs));
+            }
+        } catch (SQLException e) {
+            System.err.println("Σφάλμα ανάκτησης ACS αποστολών: " + e.getMessage());
+        }
+        return results;
+    }
+
     /**
      * Ενημέρωση tracking δεδομένων από ACS API
      */
@@ -344,6 +361,24 @@ public class ApostoliDAO {
             return false;
         }
     }
+
+    /**
+     * Ενημέρωση ημερομηνίας έκδοσης αποστολής
+     */
+    public boolean updateIssuanceDate(String arithmosApostolis, LocalDate ekdosisDate) {
+        String sql = "UPDATE apostoles SET imerominia_ekdosis = ? WHERE arithmos_apostolis = ? AND status_locked = FALSE";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setDate(1, ekdosisDate != null ? Date.valueOf(ekdosisDate) : null);
+            stmt.setString(2, arithmosApostolis);
+
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Σφάλμα ενημέρωσης ημερομηνίας έκδοσης: " + e.getMessage());
+            return false;
+        }
+    }
+
     /**
      * Μετατροπή ResultSet σε Apostoli object
      */
@@ -360,10 +395,14 @@ public class ApostoliDAO {
             apostoli.setImerominiaParalabis(paralabisDate.toLocalDate());
         }
 
+
         Date paradosisDate = rs.getDate("imerominia_paradosis");
         if (paradosisDate != null) {
             apostoli.setImerominiaParadosis(paradosisDate.toLocalDate());
         }
+
+        apostoli.setImerominiaEkdosis(rs.getDate("imerominia_ekdosis") != null ?
+                rs.getDate("imerominia_ekdosis").toLocalDate() : null);
 
         apostoli.setAntikatavoli(rs.getBigDecimal("antikatavoli"));
         apostoli.setParaliptis(rs.getString("paraliptis"));
@@ -395,5 +434,23 @@ public class ApostoliDAO {
         }
 
         return apostoli;
+    }
+
+    public boolean existsByArithmosApostolis(String arithmosApostolis) {
+        String sql = "SELECT COUNT(*) FROM apostoles WHERE arithmos_apostolis = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, arithmosApostolis);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public TrackingDetailDAO getTrackingDetailDAO() {
+        return new TrackingDetailDAO();
     }
 }
