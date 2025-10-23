@@ -1,7 +1,9 @@
-package org.example;
+package org.pms;
 
-import org.example.ui.main.CustomerManagementApplication;
-import org.example.ui.main.ShipmentManagementApplication;
+import org.pms.config.DatabaseConfig;
+import org.pms.customers.ui.CustomerManagementApplication;
+import org.pms.shipments.ui.main.ShipmentManagementApplication;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -11,8 +13,12 @@ import java.awt.event.WindowEvent;
  * Κεντρικό Dashboard της εφαρμογής MyPMS
  */
 public class DashboardApplication extends JFrame {
+    private CustomerManagementApplication customerApp;
+    private ShipmentManagementApplication shipmentApp;
+    private JFrame antikatavoliFrame;
 
     public DashboardApplication() {
+
         initComponents();
         setupLayout();
         setupEvents();
@@ -57,12 +63,12 @@ public class DashboardApplication extends JFrame {
 
         JLabel titleLabel = new JLabel("MyPMS - Σύστημα Διαχείρισης");
         titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 28));
-        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setForeground(Color.BLACK);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         JLabel subtitleLabel = new JLabel("Κεντρικό Dashboard");
         subtitleLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 16));
-        subtitleLabel.setForeground(Color.WHITE);
+        subtitleLabel.setForeground(Color.BLACK);
         subtitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         panel.add(titleLabel, BorderLayout.CENTER);
@@ -73,94 +79,124 @@ public class DashboardApplication extends JFrame {
 
     private JPanel createDashboardPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
+        panel.setBackground(new Color(255, 255, 255));
+        panel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(20, 20, 20, 20);
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weightx = 1.0;
+        gbc.weighty = 0.0;
 
         // Customer Management Button
-        JButton btnCustomers = createDashboardButton(
+        JButton btnCustomers = createCompactDashboardButton(
                 "Διαχείριση Πελατών",
-                "Διαχείριση πελατών, εταιριών και υπευθύνων",
-                new Color(52, 152, 219)
+                "Πελάτες, εταιρίες και υπεύθυνοι"
         );
 
         // Shipments Management Button
-        JButton btnShipments = createDashboardButton(
+        JButton btnShipments = createCompactDashboardButton(
                 "Διαχείριση Αποστολών",
-                "Διαχείριση αποστολών και παρακολούθηση status",
-                new Color(46, 204, 113)
+                "Αποστολές και παρακολούθηση"
         );
 
-        // Add buttons to panel
+        // Antikatavoles Management Button
+        JButton btnAntikatavoles = createCompactDashboardButton(
+                "Διαχείριση Αντικαταβολών",
+                "Αντικαταβολές και αποδόσεις"
+        );
+
+        // Layout: 3 στηλες
         gbc.gridx = 0; gbc.gridy = 0;
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 1.0; gbc.weighty = 1.0;
         panel.add(btnCustomers, gbc);
 
         gbc.gridx = 1; gbc.gridy = 0;
         panel.add(btnShipments, gbc);
 
+        gbc.gridx = 2; gbc.gridy = 0;
+        panel.add(btnAntikatavoles, gbc);
+
+        // Spacer για να κρατήσει τα κουμπιά στην κορυφή
+        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 3;
+        gbc.weighty = 1.0;
+        panel.add(Box.createVerticalGlue(), gbc);
+
         // Button Events
         btnCustomers.addActionListener(e -> openCustomerManagement());
         btnShipments.addActionListener(e -> openShipmentManagement());
+        btnAntikatavoles.addActionListener(e -> openAntikatavoliManagement());
 
         return panel;
     }
 
-    private JButton createDashboardButton(String title, String description, Color color) {
+    private JButton createCompactDashboardButton(String title, String description ) {
         JButton button = new JButton();
-        button.setLayout(new BorderLayout());
-        button.setPreferredSize(new Dimension(300, 200));
-        button.setBackground(color);
-        button.setForeground(Color.WHITE);
-        button.setBorder(BorderFactory.createRaisedBevelBorder());
+        button.setLayout(new BorderLayout(10, 10));
+        button.setPreferredSize(new Dimension(220, 120));
+        button.setBackground(new Color(25, 42, 86));
+        button.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(15, 25, 50), 2),
+                BorderFactory.createEmptyBorder(15, 15, 15, 15)
+        ));
         button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         // Title Label
         JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
+        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         titleLabel.setForeground(Color.BLACK);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         // Description Label
         JLabel descLabel = new JLabel("<html><center>" + description + "</center></html>");
-        descLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
-        descLabel.setForeground(Color.BLACK);
+        descLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        descLabel.setForeground(new Color(0, 0, 0, 200));
         descLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        // Add padding
-        JPanel titlePanel = new JPanel(new BorderLayout());
-        titlePanel.setOpaque(false);
-        titlePanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
-        titlePanel.add(titleLabel, BorderLayout.CENTER);
+        JPanel contentPanel = new JPanel(new BorderLayout(5, 5));
+        contentPanel.setOpaque(false);
+        contentPanel.add(titleLabel, BorderLayout.NORTH);
+        contentPanel.add(descLabel, BorderLayout.CENTER);
 
-        JPanel descPanel = new JPanel(new BorderLayout());
-        descPanel.setOpaque(false);
-        descPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
-        descPanel.add(descLabel, BorderLayout.CENTER);
-
-        button.add(titlePanel, BorderLayout.NORTH);
-        button.add(descPanel, BorderLayout.CENTER);
+        button.add(contentPanel, BorderLayout.CENTER);
 
         // Hover effect
         button.addMouseListener(new java.awt.event.MouseAdapter() {
-            Color originalColor = color;
+            Color originalColor = new Color(25, 42, 86); ;
+            Color hoverColor = new Color(35, 60, 110);
 
             @Override
             public void mouseEntered(java.awt.event.MouseEvent e) {
-                button.setBackground(originalColor.brighter());
+                button.setBackground(hoverColor);
+                button.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(hoverColor.darker(), 3),
+                        BorderFactory.createEmptyBorder(15, 15, 15, 15)
+                ));
             }
 
             @Override
             public void mouseExited(java.awt.event.MouseEvent e) {
                 button.setBackground(originalColor);
+                button.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(originalColor.darker(), 2),
+                        BorderFactory.createEmptyBorder(15, 15, 15, 15)
+                ));
+            }
+
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                button.setBackground(originalColor.darker());
+            }
+
+            @Override
+            public void mouseReleased(java.awt.event.MouseEvent e) {
+                button.setBackground(hoverColor);
             }
         });
 
         return button;
     }
+
 
     private JPanel createFooterPanel() {
         JPanel panel = new JPanel(new BorderLayout());
@@ -197,13 +233,56 @@ public class DashboardApplication extends JFrame {
     }
 
     private void openCustomerManagement() {
-        CustomerManagementApplication customerApp = new CustomerManagementApplication();
-        customerApp.setVisible(true);
+        if (customerApp == null || !customerApp.isDisplayable()) {
+            customerApp = new CustomerManagementApplication();
+            customerApp.setVisible(true);
+        } else {
+            customerApp.toFront();
+            customerApp.requestFocus();
+            if (customerApp.getState() == JFrame.ICONIFIED) {
+                customerApp.setState(JFrame.NORMAL);
+            }
+        }
     }
 
     private void openShipmentManagement() {
-        ShipmentManagementApplication shipmentApp = new ShipmentManagementApplication();
-        shipmentApp.setVisible(true);
+        if (shipmentApp == null || !shipmentApp.isDisplayable()) {
+            shipmentApp = new ShipmentManagementApplication();
+            shipmentApp.setVisible(true);
+        } else {
+            shipmentApp.toFront();
+            shipmentApp.requestFocus();
+            if (shipmentApp.getState() == JFrame.ICONIFIED) {
+                shipmentApp.setState(JFrame.NORMAL);
+            }
+        }
+    }
+
+    private void openAntikatavoliManagement() {
+        if (antikatavoliFrame == null || !antikatavoliFrame.isDisplayable()) {
+            antikatavoliFrame = new JFrame("Διαχείριση Αντικαταβολών");
+            antikatavoliFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            antikatavoliFrame.setSize(1400, 800);
+            antikatavoliFrame.setLocationRelativeTo(this);
+
+            try {
+                antikatavoliFrame.setIconImage(new ImageIcon(getClass().getResource("/icons/app-icon.png")).getImage());
+            } catch (Exception e) {
+                // Icon not found, continue without it
+            }
+
+            org.pms.antikatavoles.ui.panels.AntikatavoliManagementPanel panel =
+                    new org.pms.antikatavoles.ui.panels.AntikatavoliManagementPanel();
+
+            antikatavoliFrame.add(panel);
+            antikatavoliFrame.setVisible(true);
+        } else {
+            antikatavoliFrame.toFront();
+            antikatavoliFrame.requestFocus();
+            if (antikatavoliFrame.getState() == JFrame.ICONIFIED) {
+                antikatavoliFrame.setState(JFrame.NORMAL);
+            }
+        }
     }
 
     private void exitApplication() {
@@ -215,7 +294,7 @@ public class DashboardApplication extends JFrame {
 
         if (confirm == JOptionPane.YES_OPTION) {
             try {
-                org.example.config.DatabaseConfig.getInstance().closeConnection();
+                DatabaseConfig.getInstance().closeConnection();
             } catch (Exception e) {
                 System.err.println("Σφάλμα κλεισίματος σύνδεσης: " + e.getMessage());
             }
@@ -262,7 +341,7 @@ public class DashboardApplication extends JFrame {
         SwingUtilities.invokeLater(() -> {
             try {
                 // Test database connection first
-                org.example.config.DatabaseConfig.getInstance().getConnection();
+                org.pms.config.DatabaseConfig.getInstance().getConnection();
 
                 // Show dashboard
                 DashboardApplication dashboard = new DashboardApplication();

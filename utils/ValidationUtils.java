@@ -1,4 +1,4 @@
-package org.example.utils;
+package org.pms.utils;
 
 /**
  * Utility κλάση για validations - συγκεντρώνει όλες τις validations σε ένα μέρος
